@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/vishvananda/netlink/nl"
+	"github.com/imilchev/netlink/nl"
 	"golang.org/x/sys/unix"
 )
 
@@ -117,6 +117,20 @@ func (filter *Fw) Attrs() *FilterAttrs {
 
 func (filter *Fw) Type() string {
 	return "fw"
+}
+
+type Cgroup struct {
+	FilterAttrs
+	ClassId uint32
+	Police  nl.TcPolice
+}
+
+func (filter *Cgroup) Attrs() *FilterAttrs {
+	return &filter.FilterAttrs
+}
+
+func (filter *Cgroup) Type() string {
+	return "cgroup"
 }
 
 // FilterDel will delete a filter from the system.
@@ -260,6 +274,12 @@ func (h *Handle) filterModify(filter Filter, flags int) error {
 			native.PutUint32(b, filter.ClassId)
 			options.AddRtAttr(nl.TCA_FW_CLASSID, b)
 		}
+	case *Cgroup:
+		if (filter.Police != nl.TcPolice{}) {
+
+			police := options.AddRtAttr(nl.TCA_CGROUP_POLICE, nil)
+			police.AddRtAttr(nl.TCA_POLICE_TBF, filter.Police.Serialize())
+		}
 	case *BpfFilter:
 		var bpfFlags uint32
 		if filter.ClassId != 0 {
@@ -349,6 +369,8 @@ func (h *Handle) FilterList(link Link, parent uint32) ([]Filter, error) {
 					filter = &Fw{}
 				case "bpf":
 					filter = &BpfFilter{}
+				case "cgroup":
+					filter = &Cgroup{}
 				case "matchall":
 					filter = &MatchAll{}
 				default:
@@ -372,6 +394,11 @@ func (h *Handle) FilterList(link Link, parent uint32) ([]Filter, error) {
 					}
 				case "bpf":
 					detailed, err = parseBpfData(filter, data)
+					if err != nil {
+						return nil, err
+					}
+				case "cgroup":
+					detailed, err = parseCgroupData(filter, data)
 					if err != nil {
 						return nil, err
 					}
@@ -723,6 +750,13 @@ func parseBpfData(filter Filter, data []syscall.NetlinkRouteAttr) (bool, error) 
 			bpf.Tag = hex.EncodeToString(datum.Value[:len(datum.Value)-1])
 		}
 	}
+	return detailed, nil
+}
+
+func parseCgroupData(filter Filter, data []syscall.NetlinkRouteAttr) (bool, error) {
+	native = nl.NativeEndian()
+	detailed := true
+
 	return detailed, nil
 }
 
