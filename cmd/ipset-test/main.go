@@ -8,7 +8,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/vishvananda/netlink"
+	"github.com/imilchev/netlink"
 )
 
 type command struct {
