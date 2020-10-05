@@ -16,10 +16,5 @@ before_script:
   - sudo modprobe sch_hfsc
   - sudo modprobe sch_sfq
 install:
-<<<<<<< HEAD
   - go get -v -t ./...
 go_import_path: github.com/vishvananda/netlink
-=======
-  - go get github.com/vishvananda/netns
-go_import_path: github.com/imilchev/netlink
->>>>>>> changed module directory

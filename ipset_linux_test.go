@@ -6,7 +6,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/vishvananda/netlink/nl"
+	"github.com/imilchev/netlink/nl"
 )
 
 func TestParseIpsetProtocolResult(t *testing.T) {
